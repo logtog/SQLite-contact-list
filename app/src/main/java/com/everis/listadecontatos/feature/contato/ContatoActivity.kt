@@ -6,9 +6,7 @@ import com.everis.listadecontatos.R
 import com.everis.listadecontatos.application.ContatoApplication
 import com.everis.listadecontatos.bases.BaseActivity
 import com.everis.listadecontatos.feature.listacontatos.model.ContatosVO
-import com.everis.listadecontatos.singleton.ContatoSingleton
 import kotlinx.android.synthetic.main.activity_contato.*
-import kotlinx.android.synthetic.main.activity_contato.toolBar
 
 class ContatoActivity : BaseActivity() {
 
@@ -28,10 +26,17 @@ class ContatoActivity : BaseActivity() {
             btnExcluirContato.visibility = View.GONE
             return
         }
-        var lista = ContatoApplication.instance.helperDB?.contactsSearch("$idContato", true) ?: return
-        var contato = lista.getOrNull(0) ?: return
-        etNome.setText(contato.nome)
-        etTelefone.setText(contato.telefone)
+        progress.visibility = View.VISIBLE
+        Thread(Runnable {
+            Thread.sleep(1000)
+            var lista = ContatoApplication.instance.helperDB?.contactsSearch("$idContato", true) ?: return@Runnable
+            var contato = lista.getOrNull(0) ?: return@Runnable
+            runOnUiThread{
+                etNome.setText(contato.nome)
+                etTelefone.setText(contato.telefone)
+                progress.visibility = View.GONE
+            }
+        }).start()
     }
 
     private fun onClickSalvarContato(){
@@ -42,18 +47,32 @@ class ContatoActivity : BaseActivity() {
             nome,
             telefone
         )
-        if(idContato == -1) {
-            ContatoApplication.instance.helperDB?.saveContact(contato)
-        }else{
-            ContatoApplication.instance.helperDB?.updateContato(contato)
-        }
-        finish()
+        progress.visibility = View.VISIBLE
+        Thread(Runnable {
+            Thread.sleep(1000)
+            if(idContato == -1) {
+                ContatoApplication.instance.helperDB?.saveContact(contato)
+            }else{
+                ContatoApplication.instance.helperDB?.updateContato(contato)
+            }
+            runOnUiThread {
+                progress.visibility = View.GONE
+                finish()
+            }
+        }).start()
     }
 
     fun onClickExcluirContato(view: View) {
         if(idContato > -1){
-            ContatoApplication.instance.helperDB?.deleteContact(idContato)
-            finish()
+            progress.visibility = View.VISIBLE
+            Thread(Runnable {
+                Thread.sleep(1000)
+                ContatoApplication.instance.helperDB?.deleteContact(idContato)
+                runOnUiThread {
+                    progress.visibility = View.GONE
+                    finish()
+                }
+            }).start()
         }
     }
 }

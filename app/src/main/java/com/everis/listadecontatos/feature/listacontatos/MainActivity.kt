@@ -2,6 +2,7 @@ package com.everis.listadecontatos.feature.listacontatos
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.everis.listadecontatos.R
@@ -13,6 +14,7 @@ import com.everis.listadecontatos.feature.listacontatos.model.ContatosVO
 import com.everis.listadecontatos.singleton.ContatoSingleton
 import kotlinx.android.synthetic.main.activity_main.*
 import java.lang.Exception
+import kotlin.concurrent.thread
 
 
 class MainActivity : BaseActivity() {
@@ -54,15 +56,21 @@ class MainActivity : BaseActivity() {
 
     private fun onClickBuscar(){
         val busca = etBuscar.text.toString()
-        var listaFiltrada: List<ContatosVO> = mutableListOf()
-        try {
-            listaFiltrada = ContatoApplication.instance.helperDB?.contactsSearch(busca) ?: mutableListOf()
-        }catch(ex: Exception) {
-            ex.printStackTrace()
-        }
-        adapter = ContatoAdapter(this,listaFiltrada) {onClickItemRecyclerView(it)}
-        recyclerView.adapter = adapter
-        Toast.makeText(this,"Buscando por $busca",Toast.LENGTH_SHORT).show()
+        progress.visibility = View.VISIBLE
+        Thread(Runnable {
+            Thread.sleep(1000)
+            var listaFiltrada: List<ContatosVO> = mutableListOf()
+            try {
+                listaFiltrada = ContatoApplication.instance.helperDB?.contactsSearch(busca) ?: mutableListOf()
+            }catch(ex: Exception) {
+                ex.printStackTrace()
+            }
+            runOnUiThread {
+                adapter = ContatoAdapter(this,listaFiltrada) {onClickItemRecyclerView(it)}
+                recyclerView.adapter = adapter
+                progress.visibility = View.GONE
+                Toast.makeText(this,"Buscando por $busca",Toast.LENGTH_SHORT).show()
+            }
+        }).start()
     }
-
 }
